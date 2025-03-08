@@ -35,8 +35,20 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>();
 //If this was a real service connected to a database, the recommended lifetime would be scoped, or in some cases transient
 builder.Services.AddSingleton<IAnimalService, AnimalService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("frontendPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:7296");
+        policy.AllowAnyMethod();
+        policy.AllowAnyHeader();
+        policy.AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
+app.UseCors("frontendPolicy");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

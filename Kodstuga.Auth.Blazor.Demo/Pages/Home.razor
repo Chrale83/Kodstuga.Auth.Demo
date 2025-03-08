@@ -1,0 +1,110 @@
+﻿@page "/"
+@using Kodstuga.Auth.Blazor.Demo.Dtos
+@inject IHttpClientFactory HttpClientFactory;
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<form>
+    <input type="email" placeholder="username" @bind="_username" />
+    <input type="password" placeholder="password" @bind="_password"/>
+    <button type="button" @onclick="LoginAsync">log in</button>
+    <button type="button" @onclick="RegisterAsync">register</button>
+</form>
+<p>@_error</p>
+
+<button type="button" @onclick="GetAnimalsAsync">GetAllAnimals</button>
+<ul>
+    @foreach (var animal in _animals)
+    {
+        <li>ID: @animal.Id, Type: @animal.Type, Name: @animal.Name, Sound: @animal.Sound</li>
+    }
+</ul>
+
+<form>
+    <input type="text" placeholder="type" @bind="_addAnimal.Type" />
+    <input type="text" placeholder="name" @bind="_addAnimal.Name" />
+    <input type="text" placeholder="sound" @bind="_addAnimal.Sound" />
+    <button @onclick="AddAnimalAsync">Add new animal</button>
+</form>
+
+@code
+{
+    private HttpClient _httpClient;
+    private string _username = "";
+    private string _password = "";
+    private string _error = "";
+    private List<AnimalDto> _animals = new();
+    private readonly AnimalDto _addAnimal = new();
+
+    protected override void OnInitialized()
+    {
+        _httpClient = HttpClientFactory.CreateClient("backend");
+        base.OnInitialized();
+    }
+
+    private async Task LoginAsync()
+    {
+        var response = await _httpClient.PostAsJsonAsync("login", new
+        {
+            Email = _username,
+            Password = _password
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Couldnt log in because of reasons";
+            return;
+        }
+
+        var data = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
+        Console.WriteLine(data?.AccessToken ?? "no");
+
+        _username = "";
+        _password = "";
+    }
+    private async Task RegisterAsync()
+    {
+        var response = await _httpClient.PostAsJsonAsync("register", new
+        {
+            Email = _username,
+            Password = _password
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Couldnt register because of reasons";
+            return;
+        }
+
+        _username = "";
+        _password = "";
+    }
+
+    private async Task GetAnimalsAsync()
+    {
+        var response = await _httpClient.GetAsync("api/animals");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Could not get animals because of reasons";
+        }
+
+        _animals = await response.Content.ReadFromJsonAsync<List<AnimalDto>>() ?? [];
+    }
+
+    private async Task AddAnimalAsync()
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/animals", _addAnimal);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Could not add animal because of reasons";
+        }
+
+        await GetAnimalsAsync();
+    }
+}
