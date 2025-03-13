@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Kodstuga.Auth.Blazor.Demo.Dtos
+@using Kodstuga.Auth.Blazor.Demo.Events
 @inject IHttpClientFactory HttpClientFactory;
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
@@ -15,23 +16,21 @@ Welcome to your new app.
     <button type="button" @onclick="LoginAsync">log in</button>
     <button type="button" @onclick="RegisterAsync">register</button>
     <button type="button" @onclick="RegisterAdminAsync">register admin</button>
+    <button type="button" @onclick="LogoutAsync">Logout</button>
 </form>
 <p>@_error</p>
 
-<button type="button" @onclick="GetAnimalsAsync">GetAllAnimals</button>
-<ul>
-    @foreach (var animal in _animals)
-    {
-        <li>ID: @animal.Id, Type: @animal.Type, Name: @animal.Name, Sound: @animal.Sound</li>
-    }
-</ul>
 
-<form>
-    <input type="text" placeholder="type" @bind="_addAnimal.Type" />
-    <input type="text" placeholder="name" @bind="_addAnimal.Name" />
-    <input type="text" placeholder="sound" @bind="_addAnimal.Sound" />
-    <button @onclick="AddAnimalAsync">Add new animal</button>
-</form>
+
+<AuthorizeView>
+    <button type="button" @onclick="GetAnimalsAsync">GetAllAnimals</button>
+    <ul>
+        @foreach (var animal in _animals)
+        {
+            <li>ID: @animal.Id, Type: @animal.Type, Name: @animal.Name, Sound: @animal.Sound</li>
+        }
+    </ul>
+</AuthorizeView>
 
 @code
 {
@@ -66,6 +65,14 @@ Welcome to your new app.
         await LocalStorage.SetItemAsStringAsync("authToken", data.AccessToken);
         _username = "";
         _password = "";
+
+        await AuthPublisher.OnAuthenticationStateChange();
+    }
+    private async Task LogoutAsync()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+
+        await AuthPublisher.OnAuthenticationStateChange();
     }
     private async Task RegisterAsync()
     {
@@ -114,15 +121,4 @@ Welcome to your new app.
         _animals = await response.Content.ReadFromJsonAsync<List<AnimalDto>>() ?? [];
     }
 
-    private async Task AddAnimalAsync()
-    {
-        var response = await _httpClient.PostAsJsonAsync("api/animals", _addAnimal);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _error = "Could not add animal because of reasons";
-        }
-
-        await GetAnimalsAsync();
-    }
 }

@@ -43,7 +43,5 @@ public class AuthenticationStateProvider : IAuthenticationStateProvider
         return role[0].Value;
     }
 
-
-
 }
 

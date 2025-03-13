@@ -1,4 +1,5 @@
 ﻿@using Kodstuga.Auth.Blazor.Demo.Interfaces
+@using Kodstuga.Auth.Blazor.Demo.Events
 @inject IAuthenticationStateProvider AuthenticationStateProvider
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
@@ -22,7 +23,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        AuthPublisher.AuthenticationStateChanged += async () => await UpdateState();
 
+        await UpdateState();
+    }
+
+    private async Task UpdateState()
+    {
         var token = await LocalStorage.GetItemAsync<string>("authToken") ?? "";
         if (AllowedRole is null)
         {
@@ -36,7 +43,7 @@ else
             _isAllowed = true;
         }
 
+        StateHasChanged();
     }
-
     
 }
