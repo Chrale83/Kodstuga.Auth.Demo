@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Kodstuga.Auth.Blazor.Demo.Dtos
 @inject IHttpClientFactory HttpClientFactory;
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <PageTitle>Home</PageTitle>
 
@@ -13,6 +14,7 @@ Welcome to your new app.
     <input type="password" placeholder="password" @bind="_password"/>
     <button type="button" @onclick="LoginAsync">log in</button>
     <button type="button" @onclick="RegisterAsync">register</button>
+    <button type="button" @onclick="RegisterAdminAsync">register admin</button>
 </form>
 <p>@_error</p>
 
@@ -61,14 +63,30 @@ Welcome to your new app.
         }
 
         var data = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
-        Console.WriteLine(data?.AccessToken ?? "no");
-
+        await LocalStorage.SetItemAsStringAsync("authToken", data.AccessToken);
         _username = "";
         _password = "";
     }
     private async Task RegisterAsync()
     {
         var response = await _httpClient.PostAsJsonAsync("register", new
+        {
+            Email = _username,
+            Password = _password
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _error = "Couldnt register because of reasons";
+            return;
+        }
+
+        _username = "";
+        _password = "";
+    }
+    private async Task RegisterAdminAsync()
+    {
+        var response = await _httpClient.PostAsJsonAsync("register-admin", new
         {
             Email = _username,
             Password = _password

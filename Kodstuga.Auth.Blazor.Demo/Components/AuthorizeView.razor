@@ -1,0 +1,42 @@
+﻿@using Kodstuga.Auth.Blazor.Demo.Interfaces
+@inject IAuthenticationStateProvider AuthenticationStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+
+@if (_isAllowed)
+{
+    <div>
+        @ChildContent
+    </div>
+}
+else
+{
+    <p>Not allowed to see this</p>
+}
+
+@code {
+    [Parameter] public string? AllowedRole { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private bool _isAllowed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var token = await LocalStorage.GetItemAsync<string>("authToken") ?? "";
+        if (AllowedRole is null)
+        {
+            _isAllowed = await AuthenticationStateProvider.IsAuthenticatedAsync(token);
+        }
+
+        var role = await AuthenticationStateProvider.GetRoleAsync(token) ?? "";
+
+        if (role == AllowedRole)
+        {
+            _isAllowed = true;
+        }
+
+    }
+
+    
+}
